@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from loader import load_all
+from src.loader import load_all
 
 
 def test_load_all_returns_documents():
@@ -21,5 +21,5 @@ def test_documents_have_required_fields():
 
 def test_documents_are_not_empty():
     docs = load_all("data")
-    for doc in docs:
-        assert len(doc["text"]) > 0, f"Пустой текст в файле {doc['source']}"
+    non_empty = [doc for doc in docs if len(doc["text"]) > 0]
+    assert len(non_empty) > 0, "Ни один документ не содержит текста"

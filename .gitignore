@@ -5,3 +5,4 @@ venv/
 *.pkl
 .env
 .DS_Store
+lab1/data/*.pdf
