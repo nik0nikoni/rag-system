@@ -8,3 +8,4 @@ venv/
 lab1/data/*.pdf
 lab1/data/*.html
 _temp_storage/
+lab1/logs
