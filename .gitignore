@@ -6,3 +6,5 @@ venv/
 .env
 .DS_Store
 lab1/data/*.pdf
+lab1/data/*.html
+_temp_storage/
