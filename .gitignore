@@ -9,4 +9,9 @@ lab1/data/*.pdf
 lab1/data/*.html
 _temp_storage/
 lab1/logs
-lab/chroma_db
+lab1/chroma_db
+lab1/chroma_test/
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
