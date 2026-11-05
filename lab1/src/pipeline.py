@@ -1,4 +1,8 @@
+from dotenv import load_dotenv
+from langfuse import observe
 from loguru import logger
+
+load_dotenv()  # ключи Langfuse должны быть в окружении до первого вызова
 
 from filters import apply_filters
 from generator import Generator
@@ -16,15 +20,39 @@ class RAGPipeline:
         self.reranker = Reranker(top_k=TOP_K_FINAL)
         self.generator = Generator()
 
-    def query(self, question: str) -> dict:
-        candidates = self.retriever.retrieve(question)
-        reranked = self.reranker.rerank(question, candidates)
-        filtered = apply_filters(reranked, min_score=MIN_SCORE)
-        answer = self.generator.generate(question, filtered)
+    @observe(name="retrieve")
+    def _retrieve(self, question: str):
+        return self.retriever.retrieve(question)
 
-        sources = [
-            {"source": d.metadata["source"], "score": round(d.metadata["rerank_score"], 2)}
-            for d in filtered
-        ]
-        logger.info(f"Вопрос обработан: {len(filtered)} источников")
+    @observe(name="rerank")
+    def _rerank(self, question: str, candidates):
+        return self.reranker.rerank(question, candidates)
+
+    @observe(name="filter")
+    def _filter(self, reranked):
+        return apply_filters(reranked, min_score=MIN_SCORE)
+
+    @observe(name="generate")
+    def _generate(self, question: str, docs):
+        return self.generator.generate(question, docs)
+
+    @staticmethod
+    def _build_sources(docs) -> list[dict]:
+        best: dict[str, float] = {}
+        for d in docs:
+            src = d.metadata["source"]
+            score = d.metadata["rerank_score"]
+            if src not in best or score > best[src]:
+                best[src] = score
+        return [{"source": s, "score": round(sc, 2)} for s, sc in best.items()]
+
+    @observe(name="rag-query")
+    def query(self, question: str) -> dict:
+        candidates = self._retrieve(question)
+        reranked = self._rerank(question, candidates)
+        filtered = self._filter(reranked)
+        answer = self._generate(question, filtered)
+
+        sources = self._build_sources(filtered)
+        logger.info(f"Вопрос обработан: {len(filtered)} чанков, {len(sources)} источников")
         return {"answer": answer, "sources": sources}

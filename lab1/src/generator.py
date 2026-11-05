@@ -5,6 +5,8 @@ from langchain_core.documents import Document
 from langchain_google_genai import ChatGoogleGenerativeAI
 from loguru import logger
 
+from langfuse.langchain import CallbackHandler
+
 load_dotenv()
 
 MODEL = os.getenv("LLM_MODEL", "gemini-3.8-flash")
@@ -41,7 +43,7 @@ class Generator:
             max_retries=2,
             timeout=30,
         )
-        
+
     def generate(self, question: str, docs: list[Document]) -> str:
         if not docs:
             logger.info("Generator: контекста нет, LLM не вызываю")
@@ -49,5 +51,8 @@ class Generator:
 
         context = "\n\n".join(f"[{i + 1}] {d.page_content}" for i, d in enumerate(docs))
         logger.debug(f"Generator: вызываю модель, чанков в контексте: {len(docs)}")
-        response = self.llm.invoke(PROMPT.format(context=context, question=question))
+        response = self.llm.invoke(
+            PROMPT.format(context=context, question=question),
+            config={"callbacks": [CallbackHandler()]},
+        )
         return _to_text(response.content)
