@@ -35,8 +35,13 @@ def _to_text(content) -> str:
 
 class Generator:
     def __init__(self, model: str = MODEL):
-        self.llm = ChatGoogleGenerativeAI(model=model, temperature=0)
-
+        self.llm = ChatGoogleGenerativeAI(
+            model=model,
+            temperature=0,
+            max_retries=2,
+            timeout=30,
+        )
+        
     def generate(self, question: str, docs: list[Document]) -> str:
         if not docs:
             logger.info("Generator: контекста нет, LLM не вызываю")
